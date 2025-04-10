@@ -18,6 +18,7 @@ class AuthController extends Controller
         $request->validate([
             'email' => 'required|email',
             'password' => 'required',
+            'remember' => 'boolean',
         ]);
 
         $user = User::where('email', $request->email)->first();
@@ -37,7 +38,12 @@ class AuthController extends Controller
             $user->load('livreur');
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        // Delete existing tokens
+        $user->tokens()->delete();
+
+        // Create a new token with expiration based on remember me
+        $tokenExpiration = $request->remember ? 60 * 24 * 30 : 60 * 24; // 30 days or 1 day
+        $token = $user->createToken('auth_token', ['*'], now()->addMinutes($tokenExpiration))->plainTextToken;
 
         return response()->json([
             'user' => $user,
