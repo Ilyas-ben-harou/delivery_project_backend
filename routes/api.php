@@ -13,7 +13,9 @@ use App\Http\Controllers\AuthController;
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+// password reset routes
+Route::post('password/email', [AuthController::class, 'sendResetLinkEmail']);
+Route::post('password/reset', [AuthController::class, 'resetPassword']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
