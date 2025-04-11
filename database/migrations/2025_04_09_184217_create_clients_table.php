@@ -8,24 +8,32 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
         Schema::create('clients', function (Blueprint $table) {
             $table->id();
+            $table->string('nom');
+            $table->string('prenom');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('company_name');
-            $table->string('address');
-            $table->string('bank_name');
-            $table->string('rib');
+            $table->string('boutique');
+            $table->string('cin');
+            $table->string('banque');
+            $table->string('rib', 24);
+            $table->string('ville');
+            $table->string('adresse')->nullable();
             $table->timestamps();
         });
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
         Schema::dropIfExists('clients');
     }
