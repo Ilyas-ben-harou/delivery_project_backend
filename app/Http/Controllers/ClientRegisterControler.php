@@ -66,4 +66,6 @@ class ClientRegisterControler extends Controller
             'token' => $token
         ], 201);
     }
+
 }
+
