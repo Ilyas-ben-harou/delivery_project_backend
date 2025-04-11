@@ -10,7 +10,9 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens,HasFactory, Notifiable;
+
+    use HasApiTokens, HasFactory, Notifiable;
+
 
     protected $fillable = [
         'email',
@@ -33,6 +35,13 @@ class User extends Authenticatable
     {
         return $this->hasOne(Admin::class);
     }
+    public function livreur()
+    {
+        return $this->hasOne(Livreur::class);
+    }
 
-
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new \App\Notifications\UserResetPasswordNotification($token));
+    }
 }

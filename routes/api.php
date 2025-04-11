@@ -3,50 +3,37 @@
 use App\Http\Controllers\ClientRegisterControler;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\OrderController;
+use App\Http\Controllers\AuthController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
 |--------------------------------------------------------------------------
 */
 
-// Routes protégées nécessitant authentification
-// Route::middleware('auth:sanctum')->group(function () {
-//     // Routes pour la gestion des commandes
-//     Route::prefix('orders')->group(function () {
-//         // Routes de base CRUD
-//         Route::get('/', [OrderController::class, 'index']);
-//         Route::post('/', [OrderController::class, 'store']);
-//         Route::get('/{id}', [OrderController::class, 'show']);
-//         Route::put('/{id}', [OrderController::class, 'update']);
-//         Route::delete('/{id}', [OrderController::class, 'destroy']);
-
-//         // Routes spécifiques pour la gestion des commandes
-//         Route::post('/{id}/document', [OrderController::class, 'generateDeliveryDocument']);
-//         Route::put('/{id}/status', [OrderController::class, 'updateStatus']);
-//         Route::put('/{id}/reassign', [OrderController::class, 'reassignOrder']);
-//     });
-// });
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| is assigned the "api" middleware group. Enjoy building your API!
-|
-*/
-
+// Public routes
 Route::post('/register', [ClientRegisterControler::class, 'register']);
 
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/client', function (Request $request) {
-        return $request->Client();
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/me', [AuthController::class, 'me']);
+    
+    // Admin routes
+    Route::middleware('role:admin')->group(function () {
+        // Admin specific routes will go here
+    });
+    
+    // Client routes
+    Route::middleware('role:client')->group(function () {
+        // Client specific routes will go here
+    });
+    
+    // Livreur routes
+    Route::middleware('role:livreur')->group(function () {
+        // Livreur specific routes will go here
     });
 });

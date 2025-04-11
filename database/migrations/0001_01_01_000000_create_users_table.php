@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('password');
             $table->string('phone_number')->nullable();
-            $table->string('role');
+            $table->string('role'); // To differentiate between regular users, admin, livreur
             $table->rememberToken();
             $table->timestamps();
         });
