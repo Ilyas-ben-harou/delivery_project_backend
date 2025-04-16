@@ -10,8 +10,11 @@ class Livreur extends Model
         'user_id',
         'first_name',
         'last_name',
+        'cin',
+        'adresse',
+        'nomber_livraisons',
         'zone_geographic_id',
-        'is_available',
+        'disponible',
     ];
 
     public function user()

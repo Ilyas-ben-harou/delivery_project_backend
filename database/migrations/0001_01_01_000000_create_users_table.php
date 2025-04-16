@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('email')->unique();
             $table->string('password');
-            $table->string('phone_number');
-            $table->string('phone_number')->nullable(); // To differentiate between regular users, admin, livreur
+            $table->string('phone_number')->nullable();
+            $table->string('role'); // To differentiate between regular users, admin, livreur
             $table->rememberToken();
             $table->timestamps();
         });
@@ -35,6 +35,7 @@ return new class extends Migration
             $table->longText('payload');
             $table->integer('last_activity')->index();
         });
+
     }
 
     /**
