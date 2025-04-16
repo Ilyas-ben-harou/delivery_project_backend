@@ -11,6 +11,61 @@ use Illuminate\Support\Facades\Validator;
 
 class LivreurController extends Controller
 {
+    public function index()
+    {
+        try {
+            $livreurs = Livreur::with(['user', 'zoneGoegraphic'])->get();
+            
+            return response()->json([
+                'status' => 'success',
+                'data' => $livreurs
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to fetch livreurs',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    public function show($id)
+    {
+        try {
+            $livreur = Livreur::with(['user', 'zoneGoegraphic'])->findOrFail($id);
+            
+            return response()->json([
+                'status' => 'success',
+                'data' => $livreur
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Livreur not found',
+                'error' => $e->getMessage()
+            ], 404);
+        }
+    }
+
+    public function updateDisponibleByAdmin($id,Request $request)
+    {
+        try {
+            $livreur = Livreur::findOrFail($id);
+            $livreur->disponible = $request->disponible;
+            $livreur->save();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Disponibility updated successfully',
+                'data' => $livreur
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to update disponibility',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
     public function store(Request $request)
     {
         // Validate request data
@@ -70,6 +125,33 @@ class LivreurController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to create livreur',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    public function destroy($id)
+    {
+        try {
+            DB::beginTransaction();
+            
+            $livreur = Livreur::findOrFail($id);
+            $user = User::findOrFail($livreur->user_id);
+            
+            $livreur->delete();
+            $user->delete();
+            
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Livreur deleted successfully'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to delete livreur',
                 'error' => $e->getMessage()
             ], 500);
         }

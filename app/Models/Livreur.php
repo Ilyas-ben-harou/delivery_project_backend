@@ -22,7 +22,7 @@ class Livreur extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function zoneGoegraphique()
+    public function zoneGoegraphic()
     {
         return $this->belongsTo(ZoneGeographic::class, 'zone_geographic_id');
     }

@@ -26,7 +26,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // Admin routes
     Route::middleware('role:admin')->prefix('admin')->group(function () {
         // Add the route for adding a livreur
+        Route::get('/livreurs', [LivreurController::class, 'index']);
+        Route::get('/livreurs/{id}', [LivreurController::class, 'show']);
+        Route::delete('/livreurs/{id}', [LivreurController::class, 'destroy']);
         Route::post('/livreurs', [LivreurController::class, 'store']);
+        Route::patch('/livreurs/{id}/disponible', [LivreurController::class, 'updateDisponibleByAdmin']);
         Route::get('/zone-geographics', [ZoneGeographicController::class, 'index']);
         // Other admin routes will go here
     });
