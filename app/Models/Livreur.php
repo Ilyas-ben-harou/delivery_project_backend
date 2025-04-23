@@ -10,8 +10,11 @@ class Livreur extends Model
         'user_id',
         'first_name',
         'last_name',
+        'cin',
+        'adresse',
+        'nomber_livraisons',
         'zone_geographic_id',
-        'is_available',
+        'disponible',
     ];
 
     public function user()
@@ -19,7 +22,7 @@ class Livreur extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function zoneGoegraphique()
+    public function zoneGoegraphic()
     {
         return $this->belongsTo(ZoneGeographic::class, 'zone_geographic_id');
     }

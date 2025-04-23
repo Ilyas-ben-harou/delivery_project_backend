@@ -17,11 +17,11 @@ class ClientRegisterControler extends Controller
         $validator = Validator::make($request->all(), [
             'nom' => 'required|string|max:255',
             'prenom' => 'required|string|max:255',
-            'telephone' => 'required|string|regex:/^00212[0-9]{9}$/',
+            'telephone' => ['required', 'string', 'regex:/^(?:\+212|0)[5-7][0-9]{8}$/'],
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
             'boutique' => 'required|string|max:255',
-            'cin' => 'required|string|max:255',
+            'cin' => ['required', 'string', 'regex:/^[A-Z]{1,2}[0-9]{5,6}$/'],
             'banque' => 'required|string|in:AL BARID BANK,BMCE,BMCI,ATTIJARI',
             'rib' => 'required|string|regex:/^[0-9]{24}$/',
             'ville' => 'required|string|in:ADISS,CASABLANCA,RABAT,MARRAKECH',
