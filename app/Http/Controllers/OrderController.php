@@ -12,16 +12,17 @@ use Illuminate\Support\Str;
 class OrderController extends Controller
 {
     public function index()
-{
-    $orders = Order::all();
-    
-    return response()->json($orders);
-}
+    {
+        $orders = Order::all();
+
+        return response()->json($orders);
+    }
     public function store(StoreOrderRequest $request)
     {
         // Create or update customer info
         $customerInfo = CustomerInfo::create(
-            ['phone_number' => $request->customer_phone_number,
+            [
+                'phone_number' => $request->customer_phone_number,
                 'full_name' => $request->customer_full_name,
                 'address' => $request->customer_address,
                 'city' => $request->customer_city,
@@ -42,7 +43,7 @@ class OrderController extends Controller
             'weight' => $request->weight,
             'collection_date' => $request->collection_date,
             'amount' => $request->amount,
-            'client_id' =>$request->client_id, // Current authenticated client
+            'client_id' => $request->client_id, // Current authenticated client
             'customer_info_id' => $customerInfo->id,
         ]);
 

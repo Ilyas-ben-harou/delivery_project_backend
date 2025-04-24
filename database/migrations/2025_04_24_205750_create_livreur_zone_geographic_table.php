@@ -11,19 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('zone_geographics', function (Blueprint $table) {
+        Schema::create('livreur_zone_geographic', function (Blueprint $table) {
             $table->id();
-            $table->string('city');
-            $table->string('secteur');
+            $table->foreignId('livreur_id')->constrained()->onDelete('cascade');
+            $table->foreignId('zone_geographic_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });
     }
+
 
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::dropIfExists('zone_geographics');
+        Schema::dropIfExists('livreur_zone_geographic');
     }
 };

@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ClientRegisterControler;
 use App\Http\Controllers\LivreurController;
+use App\Http\Controllers\OrderAssignmentController;
 use App\Http\Controllers\ZoneGeographicController;
 use App\Http\Controllers\OrderController;
 use Illuminate\Http\Request;
@@ -13,6 +15,17 @@ use App\Http\Controllers\AuthController;
 | API Routes
 |--------------------------------------------------------------------------
 */
+// Order Assignment API Routes
+Route::prefix('orders/assignment')->name('api.orders.assignment.')->group(function () {
+    Route::get('/', [OrderAssignmentController::class, 'index']);
+    Route::post('/assign/{order}', [OrderAssignmentController::class, 'assignOrder']);
+    Route::post('/manual-assign/{order}', [OrderAssignmentController::class, 'manualAssign']);
+    Route::post('/batch-assign', [OrderAssignmentController::class, 'batchAssign']);
+    Route::post('/update-availability', [OrderAssignmentController::class, 'updateAvailability']);
+    Route::post('/reassign/{livreur}', [OrderAssignmentController::class, 'reassignOrders']);
+    Route::get('/statistics', [OrderAssignmentController::class, 'zoneStatistics']);
+    Route::get('/livreurs/zone/{zone}', [OrderAssignmentController::class, 'getAvailableLivreursByZone']);
+});
 // Public routes
 Route::post('/register', [ClientRegisterControler::class, 'register']);
 
@@ -33,6 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/livreurs', [LivreurController::class, 'store']);
         Route::patch('/livreurs/{id}/disponible', [LivreurController::class, 'updateDisponibleByAdmin']);
         Route::get('/zone-geographics', [ZoneGeographicController::class, 'index']);
+        Route::get('/orders', [AdminController::class, 'getOrders']);
         // Other admin routes will go here
     });
     

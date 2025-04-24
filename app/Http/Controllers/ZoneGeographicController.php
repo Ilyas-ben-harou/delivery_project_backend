@@ -13,7 +13,7 @@ class ZoneGeographicController extends Controller
     public function index()
     {
         try {
-            $zoneGeographics = ZoneGeographic::select('id', 'city', 'region')
+            $zoneGeographics = ZoneGeographic::select('id', 'city', 'secteur')
                 ->orderBy('city')
                 ->get();
     

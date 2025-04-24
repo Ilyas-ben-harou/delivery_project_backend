@@ -13,7 +13,6 @@ class Livreur extends Model
         'cin',
         'adresse',
         'nomber_livraisons',
-        'zone_geographic_id',
         'disponible',
     ];
 
@@ -22,9 +21,10 @@ class Livreur extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function zoneGoegraphic()
+    // Nouvelle relation many-to-many avec ZoneGeographic
+    public function zones()
     {
-        return $this->belongsTo(ZoneGeographic::class, 'zone_geographic_id');
+        return $this->belongsToMany(ZoneGeographic::class, 'livreur_zone_geographic');
     }
 
     public function orders()

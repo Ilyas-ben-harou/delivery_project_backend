@@ -14,7 +14,7 @@ class LivreurController extends Controller
     public function index()
     {
         try {
-            $livreurs = Livreur::with(['user', 'zoneGoegraphic'])->get();
+            $livreurs = Livreur::with(['user', 'zones'])->get();
             
             return response()->json([
                 'status' => 'success',
@@ -28,10 +28,11 @@ class LivreurController extends Controller
             ], 500);
         }
     }
+
     public function show($id)
     {
         try {
-            $livreur = Livreur::with(['user', 'zoneGoegraphic'])->findOrFail($id);
+            $livreur = Livreur::with(['user', 'zones'])->findOrFail($id);
             
             return response()->json([
                 'status' => 'success',
@@ -46,7 +47,7 @@ class LivreurController extends Controller
         }
     }
 
-    public function updateDisponibleByAdmin($id,Request $request)
+    public function updateDisponibleByAdmin($id, Request $request)
     {
         try {
             $livreur = Livreur::findOrFail($id);
@@ -66,6 +67,7 @@ class LivreurController extends Controller
             ], 500);
         }
     }
+
     public function store(Request $request)
     {
         // Validate request data
@@ -76,7 +78,8 @@ class LivreurController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
             'cin' => ['required', 'string', 'regex:/^[A-Z]{1,2}[0-9]{5,6}$/'],
-            'zone_geographic_id' => 'required|integer|exists:zone_geographics,id',
+            'zone_geographic_ids' => 'required|array',
+            'zone_geographic_ids.*' => 'integer|exists:zone_geographics,id',
             'adresse' => 'nullable|string|max:255',
         ]);
 
@@ -103,11 +106,13 @@ class LivreurController extends Controller
                 'first_name' => $request->first_name,
                 'last_name' => $request->last_name,
                 'cin' => $request->cin,
-                'zone_geographic_id' => $request->zone_geographic_id, // Changed to match your migration
                 'disponible' => true,
                 'nomber_livraisons' => 0,
                 'adresse' => $request->adresse,
             ]);
+
+            // Attacher plusieurs zones au livreur
+            $livreur->zones()->attach($request->zone_geographic_ids);
 
             DB::commit();
 
@@ -116,7 +121,7 @@ class LivreurController extends Controller
                 'message' => 'Livreur created successfully',
                 'data' => [
                     'user' => $user,
-                    'livreur' => $livreur
+                    'livreur' => $livreur->load('zones'),
                 ]
             ], 201);
         } catch (\Exception $e) {
@@ -129,6 +134,7 @@ class LivreurController extends Controller
             ], 500);
         }
     }
+
     public function destroy($id)
     {
         try {
@@ -136,6 +142,9 @@ class LivreurController extends Controller
             
             $livreur = Livreur::findOrFail($id);
             $user = User::findOrFail($livreur->user_id);
+
+            // Détacher les zones (optionnel car cascade possible)
+            $livreur->zones()->detach();
             
             $livreur->delete();
             $user->delete();

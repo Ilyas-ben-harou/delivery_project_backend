@@ -17,7 +17,6 @@ return new class extends Migration
             $table->string('first_name');
             $table->string('last_name');
             $table->string( 'cin')->unique();
-            $table->foreignId('zone_geographic_id')->constrained('zone_geographics');
             $table->boolean('disponible')->default(true);
             $table->text('adresse');
             $table->integer('nomber_livraisons')->default(0);
