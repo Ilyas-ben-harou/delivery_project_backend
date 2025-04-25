@@ -2,15 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Livreur;
 use App\Models\Order;
 use App\Models\CustomerInfo;
+use App\Services\OrderAssignmentService;
 use Illuminate\Http\Request;
 use App\Http\Requests\StoreOrderRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class OrderController extends Controller
 {
+    protected $orderAssignmentService;
+
+    public function __construct(OrderAssignmentService $orderAssignmentService)
+    {
+        $this->orderAssignmentService = $orderAssignmentService;
+    }
     public function index()
     {
         $orders = Order::all();
@@ -20,15 +29,13 @@ class OrderController extends Controller
     public function store(StoreOrderRequest $request)
     {
         // Create or update customer info
-        $customerInfo = CustomerInfo::create(
-            [
-                'phone_number' => $request->customer_phone_number,
-                'full_name' => $request->customer_full_name,
-                'address' => $request->customer_address,
-                'city' => $request->customer_city,
-                'zone_geographic_id' => $request->zone_geographic_id,
-            ]
-        );
+        $customerInfo = CustomerInfo::create([
+            'phone_number' => $request->customer_phone_number,
+            'full_name' => $request->customer_full_name,
+            'address' => $request->customer_address,
+            'city' => $request->customer_city,
+            'zone_geographic_id' => $request->zone_geographic_id,
+        ]);
 
         // Generate unique order number
         $orderNumber = 'ORD-' . Str::upper(Str::random(8));
@@ -47,10 +54,34 @@ class OrderController extends Controller
             'customer_info_id' => $customerInfo->id,
         ]);
 
+        // Find available livreur in the same zone geographic
+        $availableLivreur = DB::table('livreurs')
+            ->join('livreur_zone_geographic', 'livreurs.id', '=', 'livreur_zone_geographic.livreur_id')
+            ->where('livreur_zone_geographic.zone_geographic_id', $request->zone_geographic_id)
+            ->where('livreurs.disponible', true)
+            ->orderBy('livreurs.nomber_livraisons', 'asc') // Assign to the livreur with fewer deliveries
+            ->select('livreurs.id')
+            ->first();
+
+        $assigned = false;
+        if ($availableLivreur) {
+            // Update the order with the assigned livreur
+            $order->livreur_id = $availableLivreur->id;
+            $order->save();
+
+            // Update the livreur's delivery count
+            $livreur = Livreur::find($availableLivreur->id);
+            $livreur->nomber_livraisons += 1;
+            $livreur->save();
+
+            $assigned = true;
+        }
+
         return response()->json([
             'success' => true,
-            'message' => 'Order created successfully',
-            'data' => $order
+            'message' => $assigned ? 'Order created and assigned to a deliverer' : 'Order created successfully, but no available deliverer found in this zone',
+            'data' => $order,
+            'assigned' => $assigned
         ], 201);
     }
 }
