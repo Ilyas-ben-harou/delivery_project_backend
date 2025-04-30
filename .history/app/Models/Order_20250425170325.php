@@ -35,7 +35,8 @@ class Order extends Model
 
     public function livreur()
     {
-        return $this->belongsTo(Livreur::class,);
+        $livreurs=Livreur::with(['user']);
+        return $this->belongsTo();
     }
 
     public function customerInfo()

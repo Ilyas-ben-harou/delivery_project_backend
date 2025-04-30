@@ -35,6 +35,7 @@ class Order extends Model
 
     public function livreur()
     {
+        $livreurs=Livreur::with(());
         return $this->belongsTo(Livreur::class,);
     }
 

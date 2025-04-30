@@ -20,12 +20,14 @@ class OrderController extends Controller
     {
         $this->orderAssignmentService = $orderAssignmentService;
     }
-    public function index()
+    public function index(Request $request)
     {
-        $orders = Order::all();
+        $perPage = $request->input('per_page', 5); // Par défaut : 5 éléments par page
+        $orders = Order::paginate($perPage);
 
         return response()->json($orders);
     }
+
     public function store(StoreOrderRequest $request)
     {
         // Create or update customer info

@@ -86,10 +86,25 @@ class OrderController extends Controller
     }
     public function show($id)
     {
-        $order = Order::with(['customerInfo', 'livreur.user'])->findOrFail($id);
+        $order = Order::with([
+            'customerInfo.zoneGeographic',
+            'livreur',
+            'client', // Assurez-vous que cette relation est bien définie dans votre modèle Order
+            'deliveryDocument',
+            'payment',
+            'history',
+            'notes.user'
+        ])->findOrFail($id);
+
+        // Vérifier si les données client sont présentes
+        if ($order->client) {
+            // Assurez-vous que les champs nécessaires sont présents
+            $order->client->makeVisible(['name', 'email', 'phone']);
+        }
 
         return response()->json([
             'success' => true,
+            'message' => 'Order details retrieved successfully',
             'data' => $order
         ]);
     }

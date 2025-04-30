@@ -86,7 +86,7 @@ class OrderController extends Controller
     }
     public function show($id)
     {
-        $order = Order::with(['customerInfo', 'livreur.user'])->findOrFail($id);
+        $order = Order::with(['customerInfo', 'livreur', 'client'])->findOrFail($id);
 
         return response()->json([
             'success' => true,

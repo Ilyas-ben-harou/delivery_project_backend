@@ -20,12 +20,31 @@ class OrderController extends Controller
     {
         $this->orderAssignmentService = $orderAssignmentService;
     }
-    public function index()
-    {
-        $orders = Order::all();
+    public function index(Request $request)
+{
+    $query = Order::query()
+        ->where('client_id', auth()->id())
+        ->with('customerInfo') // Charger les infos client si besoin
+        ->orderByDesc('created_at');
 
-        return response()->json($orders);
+    // Filtre par statut si présent
+    if ($request->has('status') && $request->status !== '') {
+        $query->where('status', $request->status);
     }
+
+    // Recherche par numéro ou nom produit
+    if ($request->has('search') && $request->search !== '') {
+        $search = $request->search;
+        $query->where(function($q) use ($search) {
+            $q->where('order_number', 'LIKE', "%{$search}%")
+              ->orWhere('designation_product', 'LIKE', "%{$search}%");
+        });
+    }
+
+    $orders = $query->paginate(5); // ou un autre nombre par page
+
+    return response()->json($orders);
+}
     public function store(StoreOrderRequest $request)
     {
         // Create or update customer info

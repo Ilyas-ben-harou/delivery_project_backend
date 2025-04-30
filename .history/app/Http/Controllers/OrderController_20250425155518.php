@@ -84,13 +84,4 @@ class OrderController extends Controller
             'assigned' => $assigned
         ], 201);
     }
-    public function show($id)
-    {
-        $order = Order::with(['customerInfo', 'livreur.user'])->findOrFail($id);
-
-        return response()->json([
-            'success' => true,
-            'data' => $order
-        ]);
-    }
 }
