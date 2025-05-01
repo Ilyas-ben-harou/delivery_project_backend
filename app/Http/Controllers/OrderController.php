@@ -93,4 +93,43 @@ class OrderController extends Controller
             'data' => $order
         ]);
     }
+    public function updateStatus(Request $request, $id)
+    {
+        $order = Order::findOrFail($id);
+        $order->status = $request->status;
+        $order->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order status updated successfully',
+            'data' => $order
+        ]);
+    }
+    public function assignToLivreur(Request $request, $id)
+    {
+        $order = Order::findOrFail($id);
+        $livreur = Livreur::findOrFail($request->livreur_id);
+
+        // Check if the livreur is available
+        if (!$livreur->disponible) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Livreur is not available'
+            ], 400);
+        }
+
+        // Assign the order to the livreur
+        $order->livreur_id = $livreur->id;
+        $order->save();
+
+        // Update the livreur's delivery count
+        $livreur->nomber_livraisons += 1;
+        $livreur->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order assigned to livreur successfully',
+            'data' => $order
+        ]);
+    }
 }

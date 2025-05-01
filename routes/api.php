@@ -47,11 +47,11 @@ Route::middleware('auth:sanctum')->group(function () {
         
         // Order management
         Route::get('/orders', [AdminController::class, 'getOrders']);
-        Route::get('/orders/{id}', [OrderController::class, 'show']);
+        Route::get('/orders/{id}', [AdminController::class, 'getOrder']);
         Route::put('/orders/{id}', [OrderController::class, 'update']);
         Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus']);
         Route::delete('/orders/{id}', [OrderController::class, 'destroy']);
-        // Route::patch('/orders/{id}/assign', [OrderAssignmentController::class, 'manualAssign']);
+        Route::patch('/orders/{id}/assign', [OrderController::class, 'assignToLivreur']);
         
         // Customer info management
         // Route::get('/customer-infos', [CustomerInfoController::class, 'index']);
