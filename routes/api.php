@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ClientRegisterControler;
 use App\Http\Controllers\LivreurController;
@@ -52,6 +53,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus']);
         Route::delete('/orders/{id}', [OrderController::class, 'destroy']);
         Route::patch('/orders/{id}/assign', [OrderController::class, 'assignToLivreur']);
+
+        //client management
+        Route::post('/clients/register',[ClientController::class,'register']);
+        Route::get('/clients', [ClientController::class, 'index']);
+        Route::get('/clients/{id}', [ClientController::class, 'show']);
+        Route::put('/clients/{id}', [ClientController::class, 'update']);
+        Route::delete('/clients/{id}', [ClientController::class, 'destroy']);
+
         
         // Customer info management
         // Route::get('/customer-infos', [CustomerInfoController::class, 'index']);
