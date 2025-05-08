@@ -113,28 +113,6 @@ Route::middleware('auth:sanctum')->group(function () {
         // Route::get('/dashboard', [DashboardController::class, 'livreurStats']);
 
         // Route optimization endpoints for livreur
-        // Get optimized route for assigned orders
-        Route::get('/route-optimization', [RouteOptimizationController::class, 'getOptimizedRoute']);
-
-        // Get turn-by-turn directions for specific route
-        Route::get('/route-optimization/{id}/directions', [RouteOptimizationController::class, 'getDirections']);
-
-        // Get estimated time of arrival for a specific order
-        Route::get('/route-optimization/orders/{orderId}/eta', [RouteOptimizationController::class, 'getOrderEta']);
-
-        // Get printable route instructions
-        Route::get('/route-optimization/print', [RouteOptimizationController::class, 'getPrintableRoute']);
-
-        // Get real-time traffic updates for current route
-        Route::get('/route-optimization/traffic', [RouteOptimizationController::class, 'getTrafficUpdates']);
-
-        // Regenerate optimized route (useful when traffic conditions change)
-        Route::post('/route-optimization/regenerate', [RouteOptimizationController::class, 'regenerateRoute']);
-
-        // Save completed route data for analysis
-        Route::post('/route-optimization/complete', [RouteOptimizationController::class, 'completeRoute']);
-
-        // Get multiple stop optimization for selected orders
-        Route::post('/route-optimization/multi-stop', [RouteOptimizationController::class, 'optimizeMultipleStops']);
+        
     });
 });
