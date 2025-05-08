@@ -7,6 +7,7 @@ use App\Http\Controllers\LivreurController;
 use App\Http\Controllers\OrderAssignmentController;
 use App\Http\Controllers\ZoneGeographicController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\RouteOptimizationController; // New controller for route optimization
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
@@ -28,7 +29,7 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
-    
+
     // Admin routes
     Route::middleware('role:admin')->prefix('admin')->group(function () {
         // Livreur management
@@ -38,14 +39,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/livreurs', [LivreurController::class, 'store']);
         Route::put('/livreurs/{id}', [LivreurController::class, 'update']);
         Route::patch('/livreurs/{id}/disponible', [LivreurController::class, 'updateDisponibleByAdmin']);
-        
+
         // Zone geographic management
         Route::get('/zone-geographics', [ZoneGeographicController::class, 'index']);
         Route::post('/zone-geographics', [ZoneGeographicController::class, 'store']);
         Route::get('/zone-geographics/{id}', [ZoneGeographicController::class, 'show']);
         Route::put('/zone-geographics/{id}', [ZoneGeographicController::class, 'update']);
         Route::delete('/zone-geographics/{id}', [ZoneGeographicController::class, 'destroy']);
-        
+
         // Order management
         Route::get('/orders', [AdminController::class, 'getOrders']);
         Route::get('/orders/{id}', [AdminController::class, 'getOrder']);
@@ -61,14 +62,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/clients/{id}', [ClientController::class, 'update']);
         Route::delete('/clients/{id}', [ClientController::class, 'destroy']);
 
-        
+        // Route optimization management for admin
+        Route::get('/route-optimization/stats', [RouteOptimizationController::class, 'getRouteStats']);
+        Route::get('/route-optimization/all', [RouteOptimizationController::class, 'getAllRoutes']);
+
         // Customer info management
         // Route::get('/customer-infos', [CustomerInfoController::class, 'index']);
-        
+
         // Dashboard statistics
         // Route::get('/dashboard', [DashboardController::class, 'adminStats']);
     });
-    
+
     // Client routes
     Route::middleware('role:client')->prefix('client')->group(function () {
         // Order management
@@ -77,34 +81,60 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/orders/{id}', [OrderController::class, 'show']);
         Route::put('/orders/{id}', [OrderController::class, 'update']);
         Route::delete('/orders/{id}', [OrderController::class, 'destroy']);
-        
+
         // Zone geographic lookup for order creation
         Route::get('/zone-geographics', [ZoneGeographicController::class, 'index']);
-        
+
         // Client dashboard stats
         // Route::get('/dashboard', [DashboardController::class, 'clientStats']);
-    }); 
-    
+    });
+
     // Livreur routes
     Route::middleware('role:livreur')->prefix('livreur')->group(function () {
         // Retrieve assigned orders
-        Route::get('/orders', [OrderController::class, 'getLivreurOrders']);
+        Route::post('/orders', [OrderController::class, 'getLivreurOrders']);
         Route::get('/orders/{id}', [OrderController::class, 'show']);
-        
+        Route::put('/orders/{id}', [App\Http\Controllers\OrderController::class, 'updateStatus']);
+
         // Update order status (e.g., mark as delivered)
         Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatusByLivreur']);
-        
+
         // Update own availability status
         Route::patch('/disponible', [LivreurController::class, 'updateDisponible']);
-        
+
         // Get zones assigned to this livreur
         Route::get('/zones', [LivreurController::class, 'getAssignedZones']);
-        
+
         // Livreur profile
         Route::get('/profile', [LivreurController::class, 'getProfile']);
         Route::put('/profile', [LivreurController::class, 'updateProfile']);
-        
+
         // Livreur dashboard stats
         // Route::get('/dashboard', [DashboardController::class, 'livreurStats']);
+
+        // Route optimization endpoints for livreur
+        // Get optimized route for assigned orders
+        Route::get('/route-optimization', [RouteOptimizationController::class, 'getOptimizedRoute']);
+
+        // Get turn-by-turn directions for specific route
+        Route::get('/route-optimization/{id}/directions', [RouteOptimizationController::class, 'getDirections']);
+
+        // Get estimated time of arrival for a specific order
+        Route::get('/route-optimization/orders/{orderId}/eta', [RouteOptimizationController::class, 'getOrderEta']);
+
+        // Get printable route instructions
+        Route::get('/route-optimization/print', [RouteOptimizationController::class, 'getPrintableRoute']);
+
+        // Get real-time traffic updates for current route
+        Route::get('/route-optimization/traffic', [RouteOptimizationController::class, 'getTrafficUpdates']);
+
+        // Regenerate optimized route (useful when traffic conditions change)
+        Route::post('/route-optimization/regenerate', [RouteOptimizationController::class, 'regenerateRoute']);
+
+        // Save completed route data for analysis
+        Route::post('/route-optimization/complete', [RouteOptimizationController::class, 'completeRoute']);
+
+        // Get multiple stop optimization for selected orders
+        Route::post('/route-optimization/multi-stop', [RouteOptimizationController::class, 'optimizeMultipleStops']);
     });
 });

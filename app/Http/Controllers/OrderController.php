@@ -26,6 +26,12 @@ class OrderController extends Controller
 
         return response()->json($orders);
     }
+    public function getLivreurOrders(Request $request)
+    {
+        $orders = Order::where('livreur_id', $request->livreur_id)->with('customerInfo')->get();
+
+        return response()->json($orders);
+    }
     public function store(StoreOrderRequest $request)
     {
         // Create or update customer info
@@ -97,6 +103,16 @@ class OrderController extends Controller
     {
         $order = Order::findOrFail($id);
         $order->status = $request->status;
+        if ($request->status == 'delivered') {
+            $order->delivery_date = now();
+        }
+        if ($request->status == 'failed') {
+            $order->failure_reason = $request->failure_reason;
+        }
+        if ($request->status == 'pending') {
+            $order->failure_reason = null;
+            $order->delivery_date = null;
+        }
         $order->save();
 
         return response()->json([
