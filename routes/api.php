@@ -61,11 +61,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/clients/{id}', [ClientController::class, 'show']);
         Route::put('/clients/{id}', [ClientController::class, 'update']);
         Route::delete('/clients/{id}', [ClientController::class, 'destroy']);
-
-        // Route optimization management for admin
-        Route::get('/route-optimization/stats', [RouteOptimizationController::class, 'getRouteStats']);
-        Route::get('/route-optimization/all', [RouteOptimizationController::class, 'getAllRoutes']);
-
         // Customer info management
         // Route::get('/customer-infos', [CustomerInfoController::class, 'index']);
 
@@ -91,6 +86,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Livreur routes
     Route::middleware('role:livreur')->prefix('livreur')->group(function () {
+        Route::put('/update-availability', [LivreurController::class, 'updateAvailability']);
+        
         // Retrieve assigned orders
         Route::post('/orders', [OrderController::class, 'getLivreurOrders']);
         Route::get('/orders/{id}', [OrderController::class, 'show']);

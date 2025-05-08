@@ -14,6 +14,9 @@ class Livreur extends Model
         'adresse',
         'nomber_livraisons',
         'disponible',
+        'unavailable_start',
+        'unavailable_end', 
+        'unavailable_reason'
     ];
 
     public function user()

@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\LivreurUnavailable;
 use App\Models\Livreur;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -15,7 +17,7 @@ class LivreurController extends Controller
     {
         try {
             $livreurs = Livreur::with(['user', 'zones'])->get();
-            
+
             return response()->json([
                 'status' => 'success',
                 'data' => $livreurs
@@ -33,7 +35,7 @@ class LivreurController extends Controller
     {
         try {
             $livreur = Livreur::with(['user', 'zones'])->findOrFail($id);
-            
+
             return response()->json([
                 'status' => 'success',
                 'data' => $livreur
@@ -139,16 +141,16 @@ class LivreurController extends Controller
     {
         try {
             DB::beginTransaction();
-            
+
             $livreur = Livreur::findOrFail($id);
             $user = User::findOrFail($livreur->user_id);
 
             // Détacher les zones (optionnel car cascade possible)
             $livreur->zones()->detach();
-            
+
             $livreur->delete();
             $user->delete();
-            
+
             DB::commit();
 
             return response()->json([
@@ -157,12 +159,53 @@ class LivreurController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to delete livreur',
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    public function updateAvailability(Request $request)
+    {
+        $user = Auth::user();
+        $livreur = $user->livreur;
+
+        if (!$livreur) {
+            return response()->json(['message' => 'User is not a livreur'], 403);
+        }
+
+        $request->validate([
+            'disponible' => 'required|boolean',
+            'unavailablePeriod.start' => 'required_if:disponible,false|date',
+            'unavailablePeriod.end' => 'required_if:disponible,false|date|after:unavailablePeriod.start',
+            'unavailablePeriod.reason' => 'required_if:disponible,false|string|max:255'
+        ]);
+
+        $livreur->disponible = $request->disponible;
+
+        if (!$request->disponible) {
+            event(new LivreurUnavailable(
+                $livreur,
+                $request->input('unavailablePeriod.reason'),
+                [
+                    'start' => $request->input('unavailablePeriod.start'),
+                    'end' => $request->input('unavailablePeriod.end')
+                ]
+            ));
+        } else {
+            $livreur->unavailable_start = null;
+            $livreur->unavailable_end = null;
+            $livreur->unavailable_reason = null;
+        }
+
+        $livreur->save();
+
+        return response()->json([
+            'message' => 'Availability updated successfully',
+            'livreur' => $livreur
+        ]);
     }
 }
