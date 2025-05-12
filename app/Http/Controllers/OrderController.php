@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpdateOrderRequest;
 use App\Models\Livreur;
 use App\Models\Order;
 use App\Models\CustomerInfo;
@@ -10,6 +11,7 @@ use Illuminate\Http\Request;
 use App\Http\Requests\StoreOrderRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class OrderController extends Controller
@@ -20,18 +22,21 @@ class OrderController extends Controller
     {
         $this->orderAssignmentService = $orderAssignmentService;
     }
+    
     public function index()
     {
         $orders = Order::all();
 
         return response()->json($orders);
     }
+    
     public function getLivreurOrders(Request $request)
     {
         $orders = Order::where('livreur_id', $request->livreur_id)->with('customerInfo')->get();
 
         return response()->json($orders);
     }
+    
     public function store(StoreOrderRequest $request)
     {
         // Create or update customer info
@@ -90,6 +95,7 @@ class OrderController extends Controller
             'assigned' => $assigned
         ], 201);
     }
+    
     public function show($id)
     {
         $order = Order::with(['customerInfo', 'livreur.user'])->findOrFail($id);
@@ -99,6 +105,89 @@ class OrderController extends Controller
             'data' => $order
         ]);
     }
+    
+    public function update(UpdateOrderRequest $request, $id)
+    {
+        try {
+            // Find the existing order
+            $order = Order::findOrFail($id);
+
+            // Begin database transaction
+            DB::beginTransaction();
+
+            // Update order details
+            $orderData = $request->only([
+                'order_number',
+                'designation_product',
+                'description',
+                'product_width',
+                'product_height',
+                'weight',
+                'collection_date',
+                'delivery_date',
+                'amount',
+                'status'
+            ]);
+
+            // Update the order
+            $order->update($orderData);
+
+            // Update or create customer information
+            if ($request->has('customer_info')) {
+                $customerInfoData = $request->input('customer_info');
+                
+                // Find the customer info
+                $customerInfo = CustomerInfo::find($order->customer_info_id);
+                
+                if ($customerInfo) {
+                    // Update existing customer info
+                    $customerInfo->update([
+                        'full_name' => $customerInfoData['full_name'],
+                        'phone_number' => $customerInfoData['phone_number'],
+                        'address' => $customerInfoData['address'],
+                        'city' => $customerInfoData['city']
+                    ]);
+                } else {
+                    // Create new customer info
+                    $customerInfo = CustomerInfo::create([
+                        'full_name' => $customerInfoData['full_name'],
+                        'phone_number' => $customerInfoData['phone_number'],
+                        'address' => $customerInfoData['address'],
+                        'city' => $customerInfoData['city']
+                    ]);
+                    
+                    // Associate with order
+                    $order->customer_info_id = $customerInfo->id;
+                    $order->save();
+                }
+            }
+
+            // Commit the transaction
+            DB::commit();
+
+            // Return the updated order with relationships
+            return response()->json([
+                'message' => 'Order updated successfully',
+                'data' => $order->load([
+                    'customerInfo',
+                    'livreur'
+                ])
+            ], 200);
+        } catch (\Exception $e) {
+            // Rollback the transaction in case of error
+            DB::rollBack();
+
+            // Log the error
+            Log::error('Order Update Error: ' . $e->getMessage());
+
+            // Return error response
+            return response()->json([
+                'message' => 'Failed to update order',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    
     public function updateStatus(Request $request, $id)
     {
         $order = Order::findOrFail($id);
@@ -121,6 +210,7 @@ class OrderController extends Controller
             'data' => $order
         ]);
     }
+    
     public function assignToLivreur(Request $request, $id)
     {
         $order = Order::findOrFail($id);
@@ -146,6 +236,16 @@ class OrderController extends Controller
             'success' => true,
             'message' => 'Order assigned to livreur successfully',
             'data' => $order
+        ]);
+    }
+    public function destroy($id)
+    {
+        $order = Order::findOrFail($id);
+        $order->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order deleted successfully'
         ]);
     }
 }

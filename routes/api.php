@@ -5,6 +5,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ClientRegisterControler;
 use App\Http\Controllers\LivreurController;
 use App\Http\Controllers\OrderAssignmentController;
+use App\Http\Controllers\OrderDocumentController;
 use App\Http\Controllers\ZoneGeographicController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\RouteOptimizationController; // New controller for route optimization
@@ -76,7 +77,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/orders/{id}', [OrderController::class, 'show']);
         Route::put('/orders/{id}', [OrderController::class, 'update']);
         Route::delete('/orders/{id}', [OrderController::class, 'destroy']);
-
         // Zone geographic lookup for order creation
         Route::get('/zone-geographics', [ZoneGeographicController::class, 'index']);
 
@@ -87,7 +87,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Livreur routes
     Route::middleware('role:livreur')->prefix('livreur')->group(function () {
         Route::put('/update-availability', [LivreurController::class, 'updateAvailability']);
-        
+
         // Retrieve assigned orders
         Route::post('/orders', [OrderController::class, 'getLivreurOrders']);
         Route::get('/orders/{id}', [OrderController::class, 'show']);
@@ -110,6 +110,6 @@ Route::middleware('auth:sanctum')->group(function () {
         // Route::get('/dashboard', [DashboardController::class, 'livreurStats']);
 
         // Route optimization endpoints for livreur
-        
+
     });
 });
