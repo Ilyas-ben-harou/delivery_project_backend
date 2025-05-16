@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ClientRegisterControler;
+use App\Http\Controllers\FinancialController;
 use App\Http\Controllers\LivreurController;
 use App\Http\Controllers\OrderAssignmentController;
 use App\Http\Controllers\OrderDocumentController;
@@ -67,6 +68,22 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Dashboard statistics
         // Route::get('/dashboard', [DashboardController::class, 'adminStats']);
+
+        // Financial management
+
+        // Financial dashboard
+        Route::get('/financial/dashboard', [FinancialController::class, 'dashboard']);
+        
+        // City pricing management
+        Route::get('/financial/pricing', [FinancialController::class, 'getPricing']);
+        Route::post('/financial/pricing', [FinancialController::class, 'updatePricing']);
+        Route::delete('/financial/pricing/{id}', [FinancialController::class, 'deletePricing']);
+        
+        // Distributor payments
+        Route::get('/financial/distributor-payments', [FinancialController::class, 'getDistributorPayments']);
+        
+        // Financial reports
+        Route::post('/financial/reports', [FinancialController::class, 'generateReport']);
     });
 
     // Client routes
