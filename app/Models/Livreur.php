@@ -15,7 +15,7 @@ class Livreur extends Model
         'nomber_livraisons',
         'disponible',
         'unavailable_start',
-        'unavailable_end', 
+        'unavailable_end',
         'unavailable_reason'
     ];
 
@@ -33,5 +33,14 @@ class Livreur extends Model
     public function orders()
     {
         return $this->hasMany(Order::class);
+    }
+    public function earnings()
+    {
+        return $this->hasMany(Earning::class);
+    }
+
+    public function completedOrders()
+    {
+        return $this->hasMany(Order::class)->where('status', 'completed');
     }
 }
