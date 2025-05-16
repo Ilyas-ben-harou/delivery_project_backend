@@ -11,25 +11,20 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class LivreurUnavailable implements ShouldBroadcast, ShouldQueue
+class LivreurAvailable implements ShouldBroadcast, ShouldQueue
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
+    // In your event class
     public $queue = 'notifications';
     public $livreur;
-    public $reason;
-    public $unavailablePeriod;
 
     /**
      * Create a new event instance.
      */
-    public function __construct(Livreur $livreur, string $reason, array $unavailablePeriod)
+    public function __construct(Livreur $livreur)
     {
         $this->livreur = $livreur;
-        $this->reason = $reason;
-        $this->unavailablePeriod = $unavailablePeriod;
-
-        // Don't broadcast all livreur data for security
         $this->dontBroadcastToCurrentUser();
     }
 
@@ -50,12 +45,9 @@ class LivreurUnavailable implements ShouldBroadcast, ShouldQueue
     public function broadcastWith(): array
     {
         return [
-            'message' => 'Livreur ' . $this->livreur->first_name . ' is now unavailable',
+            'message' => 'Livreur ' . $this->livreur->first_name . ' is now available',
             'livreur_id' => $this->livreur->id,
             'livreur_name' => $this->livreur->first_name,
-            'reason' => $this->reason,
-            'start_date' => $this->unavailablePeriod['start'],
-            'end_date' => $this->unavailablePeriod['end'],
             'timestamp' => now()->toDateTimeString()
         ];
     }
@@ -65,6 +57,6 @@ class LivreurUnavailable implements ShouldBroadcast, ShouldQueue
      */
     public function broadcastAs(): string
     {
-        return 'livreur.unavailable';
+        return 'livreur.available';
     }
 }

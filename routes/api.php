@@ -5,6 +5,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ClientRegisterControler;
 use App\Http\Controllers\FinancialController;
 use App\Http\Controllers\LivreurController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrderAssignmentController;
 use App\Http\Controllers\OrderDocumentController;
 use App\Http\Controllers\ZoneGeographicController;
@@ -84,6 +85,11 @@ Route::middleware('auth:sanctum')->group(function () {
         
         // Financial reports
         Route::post('/financial/reports', [FinancialController::class, 'generateReport']);
+
+        //notification
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
+        Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
     });
 
     // Client routes

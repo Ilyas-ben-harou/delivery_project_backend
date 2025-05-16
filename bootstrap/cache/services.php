@@ -34,6 +34,7 @@
     30 => 'Termwind\\Laravel\\TermwindServiceProvider',
     31 => 'SimpleSoftwareIO\\QrCode\\QrCodeServiceProvider',
     32 => 'App\\Providers\\AppServiceProvider',
+    33 => 'App\\Providers\\EventServiceProvider',
   ),
   'eager' => 
   array (
@@ -55,6 +56,7 @@
     15 => 'Termwind\\Laravel\\TermwindServiceProvider',
     16 => 'SimpleSoftwareIO\\QrCode\\QrCodeServiceProvider',
     17 => 'App\\Providers\\AppServiceProvider',
+    18 => 'App\\Providers\\EventServiceProvider',
   ),
   'deferred' => 
   array (
