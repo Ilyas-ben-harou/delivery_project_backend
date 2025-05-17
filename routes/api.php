@@ -5,6 +5,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ClientRegisterControler;
 use App\Http\Controllers\FinancialController;
 use App\Http\Controllers\LivreurController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrderAssignmentController;
 use App\Http\Controllers\OrderDocumentController;
 use App\Http\Controllers\ZoneGeographicController;
@@ -74,17 +75,22 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Financial dashboard
         Route::get('/financial/dashboard', [FinancialController::class, 'dashboard']);
-        
+
         // City pricing management
         Route::get('/financial/pricing', [FinancialController::class, 'getPricing']);
         Route::post('/financial/pricing', [FinancialController::class, 'updatePricing']);
         Route::delete('/financial/pricing/{id}', [FinancialController::class, 'deletePricing']);
-        
+
         // Distributor payments
         Route::get('/financial/distributor-payments', [FinancialController::class, 'getDistributorPayments']);
-        
+
         // Financial reports
         Route::post('/financial/reports', [FinancialController::class, 'generateReport']);
+
+        //notification
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
+        Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
     });
 
     // Client routes
@@ -128,6 +134,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Route::get('/dashboard', [DashboardController::class, 'livreurStats']);
 
         // Route optimization endpoints for livreur
+ // Route optimization endpoints for livreur
          // Route optimization endpoints for livreur
         Route::prefix('/earnings')->group(function () {
         Route::get('/', [EarningController::class, 'index']);
@@ -141,5 +148,5 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/export', 'EarningsController@export');
         Route::get('/{earning}', 'EarningsController@show');*/
     });
-});
+    });
 });

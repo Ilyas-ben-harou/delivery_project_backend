@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\LivreurAvailable;
 use App\Events\LivreurUnavailable;
 use App\Models\Livreur;
 use App\Models\User;
@@ -172,21 +173,25 @@ class LivreurController extends Controller
     {
         $user = Auth::user();
         $livreur = $user->livreur;
-
+        
         if (!$livreur) {
             return response()->json(['message' => 'User is not a livreur'], 403);
         }
-
+        
         $request->validate([
             'disponible' => 'required|boolean',
             'unavailablePeriod.start' => 'required_if:disponible,false|date',
             'unavailablePeriod.end' => 'required_if:disponible,false|date|after:unavailablePeriod.start',
             'unavailablePeriod.reason' => 'required_if:disponible,false|string|max:255'
         ]);
-
+        
         $livreur->disponible = $request->disponible;
-
+        
         if (!$request->disponible) {
+            $livreur->unavailable_start = $request->input('unavailablePeriod.start');
+            $livreur->unavailable_end = $request->input('unavailablePeriod.end');
+            $livreur->unavailable_reason = $request->input('unavailablePeriod.reason');
+            
             event(new LivreurUnavailable(
                 $livreur,
                 $request->input('unavailablePeriod.reason'),
@@ -199,10 +204,12 @@ class LivreurController extends Controller
             $livreur->unavailable_start = null;
             $livreur->unavailable_end = null;
             $livreur->unavailable_reason = null;
+            
+            event(new LivreurAvailable($livreur));
         }
-
+        
         $livreur->save();
-
+        
         return response()->json([
             'message' => 'Availability updated successfully',
             'livreur' => $livreur
