@@ -7,6 +7,7 @@ use App\Models\Livreur;
 use App\Models\Order;
 use App\Models\CustomerInfo;
 use App\Services\OrderAssignmentService;
+use App\Services\PricingService;
 use Illuminate\Http\Request;
 use App\Http\Requests\StoreOrderRequest;
 use Illuminate\Support\Facades\Auth;
@@ -17,10 +18,14 @@ use Illuminate\Support\Str;
 class OrderController extends Controller
 {
     protected $orderAssignmentService;
+    protected $pricingService;
 
-    public function __construct(OrderAssignmentService $orderAssignmentService)
-    {
+    public function __construct(
+        OrderAssignmentService $orderAssignmentService,
+        PricingService $pricingService
+    ) {
         $this->orderAssignmentService = $orderAssignmentService;
+        $this->pricingService = $pricingService;
     }
     
     public function index()
@@ -51,6 +56,11 @@ class OrderController extends Controller
         // Generate unique order number
         $orderNumber = 'ORD-' . Str::upper(Str::random(8));
 
+        // Get price based on the city using our pricing service
+        $amount = $request->has('amount') && $request->amount > 0 
+            ? $request->amount 
+            : $this->pricingService->getPriceForZone($request->zone_geographic_id);
+
         // Create the order
         $order = Order::create([
             'order_number' => $orderNumber,
@@ -60,7 +70,7 @@ class OrderController extends Controller
             'product_height' => $request->product_height,
             'weight' => $request->weight,
             'collection_date' => $request->collection_date,
-            'amount' => $request->amount,
+            'amount' => $amount,
             'client_id' => $request->client_id, // Current authenticated client
             'customer_info_id' => $customerInfo->id,
         ]);
@@ -95,6 +105,9 @@ class OrderController extends Controller
             'assigned' => $assigned
         ], 201);
     }
+    
+    // Remaining methods are unchanged...
+    // (show, update, updateStatus, assignToLivreur, destroy)
     
     public function show($id)
     {
@@ -153,7 +166,8 @@ class OrderController extends Controller
                         'full_name' => $customerInfoData['full_name'],
                         'phone_number' => $customerInfoData['phone_number'],
                         'address' => $customerInfoData['address'],
-                        'city' => $customerInfoData['city']
+                        'city' => $customerInfoData['city'],
+                        'zone_geographic_id' => $customerInfoData['zone_geographic_id'] ?? 1 // Default if not provided
                     ]);
                     
                     // Associate with order
@@ -238,6 +252,7 @@ class OrderController extends Controller
             'data' => $order
         ]);
     }
+    
     public function destroy($id)
     {
         $order = Order::findOrFail($id);

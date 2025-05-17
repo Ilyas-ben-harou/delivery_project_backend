@@ -4,9 +4,11 @@
 use Illuminate\Support\Facades\Broadcast;
 
 Broadcast::channel('admin.notifications', function ($user) {
-    return $user->isAdmin(); // Ensure you have this method in your User model
+    // Check if user is admin
+    return $user->isAdmin() === true;
 });
 
 Broadcast::channel('livreur.{id}', function ($user, $id) {
-    return (int) $user->id === (int) $id;
+    // Check if user is the livreur or an admin
+    return $user->livreur->id == $id || $user->is_admin === true;
 });

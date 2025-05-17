@@ -40,6 +40,19 @@ class User extends Authenticatable
         return $this->hasOne(Livreur::class);
     }
 
+    public function isAdmin()
+    {
+        return $this->role === 'admin'; // Update according to your role system
+    }
+    public function isClient()
+    {
+        return $this->role === 'client'; // Update according to your role system
+    }
+    public function isLivreur()
+    {
+        return $this->role === 'livreur'; // Update according to your role system
+    }
+
     public function sendPasswordResetNotification($token)
     {
         $this->notify(new \App\Notifications\UserResetPasswordNotification($token));
