@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CustomerInfoController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EarningController;
 
 /*
 |--------------------------------------------------------------------------
@@ -127,6 +128,18 @@ Route::middleware('auth:sanctum')->group(function () {
         // Route::get('/dashboard', [DashboardController::class, 'livreurStats']);
 
         // Route optimization endpoints for livreur
-
+         // Route optimization endpoints for livreur
+        Route::prefix('/earnings')->group(function () {
+        Route::get('/', [EarningController::class, 'index']);
+        Route::get('/summary', [EarningController::class, 'summary']);
+        Route::get('/reports', [EarningController::class, 'reports']);
+        Route::post('/export', [EarningController::class, 'export']);/*
+         Route::get('/', 'EarningsController@index');
+        Route::get('/summary', 'EarningsController@summary');
+        Route::get('/weekly', 'EarningsController@weeklyReport');
+        Route::get('/monthly', 'EarningsController@monthlyReport');
+        Route::get('/export', 'EarningsController@export');
+        Route::get('/{earning}', 'EarningsController@show');*/
     });
+});
 });
