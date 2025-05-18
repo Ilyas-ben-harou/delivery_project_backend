@@ -25,7 +25,8 @@ class ZoneGeographicSeeder extends Seeder
         foreach ($sectors as $sector) {
             ZoneGeographic::create([
                 'city' => 'Marrakech',
-                'secteur' => $sector
+                'secteur' => $sector,
+                'price' => collect([30, 35, 40, 45])->random()
             ]);
         }
     }

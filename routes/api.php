@@ -75,17 +75,25 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Financial dashboard
         Route::get('/financial/dashboard', [FinancialController::class, 'dashboard']);
+        // This route still gets financial dashboard data, now with zone-based pricing
 
-        // City pricing management
+        // City pricing management (now Zone pricing management)
         Route::get('/financial/pricing', [FinancialController::class, 'getPricing']);
+        // This now returns zone pricing instead of city pricing
+
         Route::post('/financial/pricing', [FinancialController::class, 'updatePricing']);
+        // This now updates zone pricing records instead of city pricing
+
         Route::delete('/financial/pricing/{id}', [FinancialController::class, 'deletePricing']);
+        // This now deletes zone pricing records instead of city pricing
 
         // Distributor payments
         Route::get('/financial/distributor-payments', [FinancialController::class, 'getDistributorPayments']);
+        // This now calculates distributor payments based on commission
 
         // Financial reports
         Route::post('/financial/reports', [FinancialController::class, 'generateReport']);
+        // This now generates financial reports with zone-based pricing
 
         //notification
         Route::get('/notifications', [NotificationController::class, 'index']);

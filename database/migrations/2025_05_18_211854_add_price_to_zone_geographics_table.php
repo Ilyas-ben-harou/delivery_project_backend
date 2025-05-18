@@ -11,11 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('city_pricing', function (Blueprint $table) {
-            $table->id();
-            $table->string('city');
-            $table->float('price');
-            $table->timestamps();
+        Schema::table('zone_geographics', function (Blueprint $table) {
+            $table->decimal('price', 8, 2)->default(0);
         });
     }
 
@@ -24,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('city_pricing');
+        Schema::table('zone_geographics', function (Blueprint $table) {
+            $table->dropColumn('price');
+        });
     }
 };

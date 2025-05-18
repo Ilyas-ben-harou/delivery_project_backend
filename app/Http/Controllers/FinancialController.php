@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CityPricing;
+use App\Models\ZoneGeographic;
 use App\Models\Order;
 use App\Models\Livreur;
+use App\Models\CustomerInfo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -14,6 +15,7 @@ class FinancialController extends Controller
 {
     /**
      * Display financial dashboard data
+     * Now calculates earnings based on delivery zone prices
      */
     public function dashboard(Request $request)
     {
@@ -30,38 +32,49 @@ class FinancialController extends Controller
                 $endDate = Carbon::parse($endDate);
             }
 
-            // Get total earnings for the period
-            $totalEarnings = Order::whereBetween('created_at', [$startDate, $endDate])
-                ->where('status', 'delivered')
-                ->sum('amount');
-
-            // Get pending payments
-            
+            // Get total earnings based on zone pricing for delivered orders
+            $totalEarnings = Order::whereBetween('orders.created_at', [$startDate, $endDate])
+                ->where('orders.status', 'delivered')
+                ->join('customer_infos', 'orders.customer_info_id', '=', 'customer_infos.id')
+                ->join('zone_geographics', 'customer_infos.zone_geographic_id', '=', 'zone_geographics.id')
+                ->sum('zone_geographics.price');
 
             // Get completed orders by status
-            $ordersByStatus = Order::whereBetween('created_at', [$startDate, $endDate])
+            $ordersByStatus = Order::whereBetween('orders.created_at', [$startDate, $endDate])
                 ->select('status', DB::raw('count(*) as count'))
                 ->groupBy('status')
                 ->get();
 
-            // Get earnings by day for the period
-            $earningsByDay = Order::whereBetween('created_at', [$startDate, $endDate])
-                ->where('status', 'delivered')
+            // Get earnings by day for the period based on zone pricing
+            $earningsByDay = Order::whereBetween('orders.created_at', [$startDate, $endDate])
+                ->where('orders.status', 'delivered')
+                ->join('customer_infos', 'orders.customer_info_id', '=', 'customer_infos.id')
+                ->join('zone_geographics', 'customer_infos.zone_geographic_id', '=', 'zone_geographics.id')
                 ->select(
-                    DB::raw('DATE(created_at) as date'),
-                    DB::raw('SUM(amount) as total')
+                    DB::raw('DATE(orders.created_at) as date'),
+                    DB::raw('SUM(zone_geographics.price) as total')
                 )
                 ->groupBy('date')
                 ->orderBy('date')
                 ->get();
 
-            // Get top distributors by earnings
-            $topDistributors = Order::whereBetween('created_at', [$startDate, $endDate])
-                ->where('status', 'delivered')
-                ->whereNotNull('livreur_id')
-                ->select('livreur_id', DB::raw('SUM(amount) as total'), DB::raw('COUNT(*) as count'))
-                ->groupBy('livreur_id')
-                ->orderBy('total', 'desc')
+            // Calculate distributor commissions (assuming 10% commission - adjust as needed)
+            $commissionPercentage = 0.10; // 10% commission
+
+            // Get top distributors by earnings with their commission
+            $topDistributors = Order::whereBetween('orders.created_at', [$startDate, $endDate])
+                ->where('orders.status', 'delivered')
+                ->whereNotNull('orders.livreur_id')
+                ->join('customer_infos', 'orders.customer_info_id', '=', 'customer_infos.id')
+                ->join('zone_geographics', 'customer_infos.zone_geographic_id', '=', 'zone_geographics.id')
+                ->select(
+                    'orders.livreur_id',
+                    DB::raw('SUM(zone_geographics.price) as total_revenue'), 
+                    DB::raw('SUM(zone_geographics.price * ' . $commissionPercentage . ') as total_commission'),
+                    DB::raw('COUNT(*) as count')
+                )
+                ->groupBy('orders.livreur_id')
+                ->orderBy('total_commission', 'desc')
                 ->limit(5)
                 ->with('livreur')
                 ->get()
@@ -69,7 +82,8 @@ class FinancialController extends Controller
                     return [
                         'id' => $order->livreur_id,
                         'name' => $order->livreur ? $order->livreur->first_name . ' ' . $order->livreur->last_name : 'Unknown',
-                        'total' => $order->total,
+                        'total_revenue' => $order->total_revenue,
+                        'total_commission' => round($order->total_commission, 2),
                         'count' => $order->count
                     ];
                 });
@@ -99,12 +113,12 @@ class FinancialController extends Controller
     }
 
     /**
-     * Get pricing for all cities
+     * Get pricing for all geographic zones
      */
     public function getPricing()
     {
         try {
-            $pricing = CityPricing::orderBy('city')->get();
+            $pricing = ZoneGeographic::orderBy('city')->orderBy('secteur')->get();
 
             return response()->json([
                 'status' => 'success',
@@ -121,12 +135,14 @@ class FinancialController extends Controller
     }
 
     /**
-     * Create or update city pricing
+     * Create or update zone pricing
      */
     public function updatePricing(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'city' => 'required|string|max:255',
+            'id' => 'sometimes|exists:zone_geographics,id',
+            'city' => 'required_without:id|string|max:255',
+            'secteur' => 'required_without:id|string|max:255',
             'price' => 'required|numeric|min:0'
         ]);
 
@@ -139,52 +155,79 @@ class FinancialController extends Controller
         }
 
         try {
-            // Find existing pricing or create new
-            $pricing = CityPricing::updateOrCreate(
-                ['city' => $request->city],
-                ['price' => $request->price]
-            );
+            if ($request->has('id')) {
+                // Update existing zone
+                $zone = ZoneGeographic::findOrFail($request->id);
+                $zone->price = $request->price;
+                
+                if ($request->has('city')) {
+                    $zone->city = $request->city;
+                }
+                
+                if ($request->has('secteur')) {
+                    $zone->secteur = $request->secteur;
+                }
+                
+                $zone->save();
+            } else {
+                // Create new zone
+                $zone = ZoneGeographic::create([
+                    'city' => $request->city,
+                    'secteur' => $request->secteur,
+                    'price' => $request->price
+                ]);
+            }
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Pricing updated successfully',
-                'data' => $pricing
+                'message' => 'Zone pricing updated successfully',
+                'data' => $zone
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error updating pricing: ' . $e->getMessage());
+            \Log::error('Error updating zone pricing: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
-                'message' => 'Failed to update pricing',
+                'message' => 'Failed to update zone pricing',
                 'error' => config('app.debug') ? $e->getMessage() : null
             ], 500);
         }
     }
 
     /**
-     * Delete city pricing
+     * Delete zone pricing
      */
     public function deletePricing($id)
     {
         try {
-            $pricing = CityPricing::findOrFail($id);
-            $pricing->delete();
+            $zone = ZoneGeographic::findOrFail($id);
+            
+            // Check if this zone is used by any customer info records
+            $customerCount = $zone->customerInfos()->count();
+            if ($customerCount > 0) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => "Cannot delete zone: it's currently used by {$customerCount} customers"
+                ], 422);
+            }
+            
+            $zone->delete();
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Pricing deleted successfully'
+                'message' => 'Zone pricing deleted successfully'
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error deleting pricing: ' . $e->getMessage());
+            \Log::error('Error deleting zone pricing: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
-                'message' => 'Failed to delete pricing',
+                'message' => 'Failed to delete zone pricing',
                 'error' => config('app.debug') ? $e->getMessage() : null
             ], 500);
         }
     }
 
     /**
-     * Get payment status for distributors
+     * Get payment status for distributors with commission calculation
      */
     public function getDistributorPayments(Request $request)
     {
@@ -193,12 +236,18 @@ class FinancialController extends Controller
             $startDate = $request->input('start_date');
             $endDate = $request->input('end_date');
             
+            // Default commission percentage - adjust as needed
+            $commissionPercentage = 0.10; // 10% commission
+            
             $query = Livreur::with(['orders' => function ($q) use ($startDate, $endDate) {
                 $q->where('status', 'delivered');
                 
                 if ($startDate && $endDate) {
-                    $q->whereBetween('delivery_date', [$startDate, $endDate]);
+                    $q->whereBetween('orders.delivery_date', [$startDate, $endDate]);
                 }
+                
+                // Load the customer info and zone data for each order
+                $q->with(['customerInfo.zoneGeographic']);
             }]);
             
             // Search by name if provided
@@ -212,14 +261,25 @@ class FinancialController extends Controller
             
             $distributors = $query->get();
             
-            $formattedDistributors = $distributors->map(function ($distributor) {
-                $totalEarnings = $distributor->orders->sum('amount');
+            $formattedDistributors = $distributors->map(function ($distributor) use ($commissionPercentage) {
+                $totalRevenue = 0;
                 $orderCount = $distributor->orders->count();
+                
+                // Calculate total revenue from zone pricing
+                foreach ($distributor->orders as $order) {
+                    if ($order->customerInfo && $order->customerInfo->zoneGeographic) {
+                        $totalRevenue += $order->customerInfo->zoneGeographic->price;
+                    }
+                }
+                
+                // Calculate commission
+                $commission = $totalRevenue * $commissionPercentage;
                 
                 return [
                     'id' => $distributor->id,
                     'name' => $distributor->first_name . ' ' . $distributor->last_name,
-                    'total_earnings' => $totalEarnings,
+                    'total_revenue' => $totalRevenue,
+                    'commission' => round($commission, 2),
                     'order_count' => $orderCount,
                     'paid' => false, // This would need to be linked to a payments table if implementing full payment tracking
                 ];
@@ -240,7 +300,7 @@ class FinancialController extends Controller
     }
 
     /**
-     * Generate financial report
+     * Generate financial report with zone-based earnings
      */
     public function generateReport(Request $request)
     {
@@ -263,6 +323,9 @@ class FinancialController extends Controller
             $endDate = Carbon::parse($request->end_date);
             $reportType = $request->report_type;
             
+            // Default commission percentage
+            $commissionPercentage = 0.10; // 10% commission
+            
             // Group format based on report type
             $groupFormat = 'Y-m-d'; // Default daily format
             if ($reportType === 'weekly') {
@@ -271,14 +334,17 @@ class FinancialController extends Controller
                 $groupFormat = 'Y-m'; // Year and month
             }
             
-            // Get orders grouped by the specified time period
-            $reportData = Order::whereBetween('created_at', [$startDate, $endDate])
+            // Get orders grouped by the specified time period with zone-based revenue
+            $reportData = Order::whereBetween('orders.created_at', [$startDate, $endDate])
+                ->join('customer_infos', 'orders.customer_info_id', '=', 'customer_infos.id')
+                ->join('zone_geographics', 'customer_infos.zone_geographic_id', '=', 'zone_geographics.id')
                 ->select(
-                    DB::raw("DATE_FORMAT(created_at, '{$groupFormat}') as period"),
-                    DB::raw('SUM(amount) as total_revenue'),
+                    DB::raw("DATE_FORMAT(orders.created_at, '{$groupFormat}') as period"),
+                    DB::raw('SUM(zone_geographics.price) as total_revenue'),
+                    DB::raw('SUM(zone_geographics.price * ' . $commissionPercentage . ') as total_commission'),
                     DB::raw('COUNT(*) as order_count'),
-                    DB::raw("SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END) as delivered_count"),
-                    DB::raw("SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failed_count")
+                    DB::raw("SUM(CASE WHEN orders.status = 'delivered' THEN 1 ELSE 0 END) as delivered_count"),
+                    DB::raw("SUM(CASE WHEN orders.status = 'failed' THEN 1 ELSE 0 END) as failed_count")
                 )
                 ->groupBy('period')
                 ->orderBy('period')
@@ -290,6 +356,7 @@ class FinancialController extends Controller
                     'report_type' => $reportType,
                     'start_date' => $startDate->format('Y-m-d'),
                     'end_date' => $endDate->format('Y-m-d'),
+                    'commission_percentage' => $commissionPercentage * 100 . '%',
                     'report_data' => $reportData
                 ]
             ]);
